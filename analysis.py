@@ -1,17 +1,35 @@
 import pandas as pd 
 
-df_facilities= pd.read_excel("Airport_Data.xlsx", sheet_name=0)
+df_fac= pd.read_excel("Airport_Data.xlsx", sheet_name=0)
 df_runway= pd.read_excel("Airport_Data.xlsx", sheet_name=1)
 df_schedules= pd.read_excel("Airport_Data.xlsx", sheet_name=2)
 df_remarks= pd.read_excel("Airport_Data.xlsx", sheet_name=3)
 
-### DATA CLEANING & PREPROCESSING
+### DATA OVERVIEW
+
+# shape of the dataset
+print("Shape of the dataset:\n",df_fac.shape)
 
 # NaN Values
-print("Total null values:\n",df_facilities.isnull().sum())
+print("Total null values:\n",df_fac.isnull().sum())
 
-# Fill NaN Values
-df_facilities=df_facilities.fillna("Unknown")
+# info of the dataset
+df_fac.info()
+
+### DATA CLEANING & PREPROCESSING
+
+df_facilities=df_fac[["SiteNumber","Type","County","City","FacilityName","Ownership","Use","ARPLatitude","ARPLongitude","ARPElevation",
+                      "MagneticVariation","DistanceFromCBD","DirectionFromCBD","LandAreaCoveredByAirport","AirspaceDetermination",
+                      "MilitaryJointUse","LastInspectionDate","OtherServices"]]
+print("\nNew Shape:\n",df_facilities.shape)
+
+print("\nNull Values:\n",df_facilities.isnull().sum())
+
+print("\nData types:\n",df_facilities.dtypes)
+
+df_facilities["AirspaceDetermination"]=df_facilities["AirspaceDetermination"].fillna("Unknown")
+df_facilities["DistanceFromCBD"]=df_facilities["DistanceFromCBD"].fillna(df_facilities["DistanceFromCBD"].mean())
+df_facilities["LandAreaCoveredByAirport"]=df_facilities["LandAreaCoveredByAirport"].fillna(df_facilities["LandAreaCoveredByAirport"].mean())
 
 # Ownership and Use values changed
 ownership_map = {
@@ -24,7 +42,7 @@ ownership_map = {
 df_facilities["Ownership"]=df_facilities["Ownership"].replace(ownership_map)
 df_facilities["Use"]=df_facilities["Use"].replace(ownership_map)
 
-### DATA OVERVIEW
+### FACILITY DISTRIBUTION EXPLORATION
 
 # Types of the Aviation Facilities
 print("\nAviation Facility Types:\n",df_facilities["Type"].unique())
@@ -47,6 +65,8 @@ print("\nAll locations are:\n",len(df_facilities["City"].unique()))  # this tota
 # Ownership details
 print("\nTypes of Ownership:\n",df_facilities["Ownership"].unique())   
 
+print("\nTypes of Airspace Determination:\n",df_facilities["AirspaceDetermination"].unique())
+
 ### EXPLORATORY DATA ANALYSIS
 
 # Average Elevation 
@@ -63,19 +83,37 @@ print("\nLowest Elevation Value:\n",highest[["ARPElevation","FacilityName"]].tai
 
 # Airports by County
 airports=df_facilities[df_facilities["Type"]=="AIRPORT"]
-airports_by_county=airports.groupby("County")["Type"].value_counts().sort_values(ascending=False)
-print("\nNumber of Airports by County:\n",airports_by_county.head(10))
+print("\nNumber of Airports by County:\n",airports["County"].value_counts())
 
 # Types of Airport Uses
-airports_per_use=airports.groupby("Type")["Use"].value_counts()
-print("\nTypes of Airport Uses:\n",airports_per_use)
+print("\nTypes of Airport Uses:\n",airports["Use"].value_counts())
 
 # Total number of facilites by ownership
 total_ownership_types=df_facilities.groupby("Type")["Ownership"].value_counts()
 print("\nTotal number of facilites by ownership:\n",total_ownership_types)
 
-# Ownership details
+# Most Ownerships
 print("\nTop Owners:\n",df_facilities["Ownership"].value_counts())   # Public Owned Facility Are Most 
 # Most types of uses
 print("\nTop Uses:\n",df_facilities["Use"].value_counts())    # Public Used Facility Are Most
 
+# number of airspace determination
+print("\nAirspace Dtermination:\n",df_facilities["AirspaceDetermination"].value_counts())
+
+# objectional and unknown airspaces
+airspace=df_facilities[(df_facilities["AirspaceDetermination"]=="OBJECTIONABLE") | (df_facilities["AirspaceDetermination"]=="Unknown")]
+print("\nObjectional and Unknown airspaces\n",airspace) 
+
+# average distance from CBD
+print("\nAverage distance from CBD:\n",df_facilities["DistanceFromCBD"].mean())
+
+#total land area covered 
+print("\nTotal Land Area Covered:\n",df_facilities["LandAreaCoveredByAirport"].sum())
+
+# land area covered per facility type
+total_land_per_type=df_facilities.groupby("Type")["LandAreaCoveredByAirport"].sum()
+print("\nTotal land covered per type:\n",total_land_per_type)
+
+# average land area per facility type
+avg_land_per_type=df_facilities.groupby("Type")["LandAreaCoveredByAirport"].mean()
+print("\nAverage land per type:\n",avg_land_per_type)
